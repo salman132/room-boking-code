@@ -1,33 +1,34 @@
-   public function store(Request $request)
-    {
-        $request->validate([
-            'room'=> 'required',
-            'date'=> 'required|date',
-            'stime'=> 'required',
-            'etime'=> 'required',
-            'description'=> 'required'
-        ]);
-        $booking = new Booking();
-        $booking->user_id = Auth::id();
-        $booking->room = $request->room;
-        $booking->date = $request->date;
-        $booking->stime = $request->stime;
-        $time = Carbon::create($request->stime)->add($request->etime,'hour')->toTimeString();
-        $booking->etime = $time;
-        $booking->description = $request->description;
-        $bookCheck = Booking::whereDate('date',$request->date)
-            ->where('room',$request->room)->whereTime('stime','<=',$time)
+<?php
+//Room Booking with date and time
+$checkData = MeetingRoomBooking::where('room_id', $room->room_no)->where('status', 1)->where('meeting_date', $meetingDate)->where(function ($dateQuery) use ($startTime, $endTime){
 
-            ->get();
+                    $dateQuery->where(function ($query) use ($startTime, $endTime) {$query->where(function ($q) use ($startTime, $endTime){
+                        $q->where('start_time','>=',$startTime)->where('end_time','<=',$endTime); })
+                        ->orWhere(function ($q) use ($startTime, $endTime){ $q->where('start_time','<',$startTime)->where('end_time','>',$startTime); });})
 
-        if(!empty($bookCheck)){
+                        ->orwhere(function ($query) use ($startTime, $endTime) {$query->where(function ($q) use ($startTime, $endTime){ $q->where('start_time','>',$startTime)->where('end_time','<',$endTime); })
+                            ->orWhere(function ($q) use ($startTime, $endTime){ $q->where('start_time','<',$endTime)->where('end_time','>',$endTime); });});
+                });
+                
 
-            foreach ($bookCheck as $b){
-                dd($b->user_id);
-            }
-        }
+// Find busy aganets between 2 dates
 
-        $booking->save();
-        Session::flash('success','You booked a room');
-        return redirect()->back();
-    }
+
+$assigned_agent = AssignAgentToProject::where(function ($dateQuery) use ($startTime, $endTime){
+
+            $dateQuery->where(function ($query) use ($startTime, $endTime) {
+                $query->where(function ($q) use ($startTime, $endTime){
+                $q->where('service_start','>=',$startTime)
+                    ->where('service_ends','<=',$endTime); })
+                ->orWhere(function ($q) use ($startTime, $endTime)
+                { $q->where('service_start','<',$startTime)
+                    ->where('service_ends','>',$startTime); });})
+                    ->orwhere(function ($query) use ($startTime, $endTime)
+                    {$query->where(function ($q) use ($startTime, $endTime)
+                    { $q->where('service_start','>',$startTime)->where('service_ends','<',$endTime); })
+                    ->orWhere(function ($q) use ($startTime, $endTime){ $q->where('service_start','<',$endTime)->where('service_ends','>',$endTime); });});
+        })->get();
+
+
+
+?>
