@@ -13,16 +13,15 @@ $checkData = MeetingRoomBooking::where('room_id', $room->room_no)->where('status
 
 // Find busy aganets between 2 dates
 
+        $assigned_agent = AssignAgentToProject::where(function ($dateQuery) use ($startTime, $endTime){
 
-$assigned_agent = AssignAgentToProject::where(function ($dateQuery) use ($startTime, $endTime){
-  
             $dateQuery->where(function ($query) use ($startTime, $endTime) {
                 $query->where(function ($q) use ($startTime, $endTime){
                 $q->where('service_start','>=',$startTime)
                     ->where('service_ends','<=',$endTime); })
                 ->orWhere(function ($q) use ($startTime, $endTime)
                 { $q->where('service_start','<=',$startTime)
-                    ->where('service_ends','>',$startTime); });})
+                    ->where('service_ends','>=',$startTime); });})
                     ->orwhere(function ($query) use ($startTime, $endTime)
                     {$query->where(function ($q) use ($startTime, $endTime)
                     { $q->where('service_start','>',$startTime)->where('service_ends','<',$endTime); })
