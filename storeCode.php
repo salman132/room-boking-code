@@ -32,3 +32,42 @@ $checkData = MeetingRoomBooking::where('room_id', $room->room_no)->where('status
 
 
 ?>
+
+<script>
+  
+  $('#datepicker').focusout(function () {
+            var start_date =  $(this).val();
+            var end_date = $("#datepicker2").val();
+
+
+            if(start_date != '{{$assign->service_start}}'){
+                $('#selected-agent').hide();
+            }
+            if(start_date == '{{$assign->service_start}}'){
+                $('#selected-agent').show();
+            }
+
+            $.ajax({
+                type: "GET",
+                url: "{{ url('eroster/agent-finder/edit') }}/" + start_date,
+                data:{
+                    end_date : end_date,
+                },
+
+                success:function (response) {
+                    $("#agentArea").html("");
+                    $("#agentArea").append(response);
+                    console.log(response)
+
+                },
+                error: function (xhr) {
+                    console.log(xhr)
+                }
+            })
+
+
+
+
+        });
+  
+</script>
