@@ -35,16 +35,18 @@ $checkData = MeetingRoomBooking::where('room_id', $room->room_no)->where('status
 
 <script>
   
-  $('#datepicker').focusout(function () {
+   $('#datepicker').focusout(function () {
             var start_date =  $(this).val();
             var end_date = $("#datepicker2").val();
 
 
             if(start_date != '{{$assign->service_start}}'){
                 $('#selected-agent').hide();
+                $("#mycheck").prop("checked", false);
             }
             if(start_date == '{{$assign->service_start}}'){
                 $('#selected-agent').show();
+                $("#mycheck").prop("checked", true);
             }
 
             $.ajax({
