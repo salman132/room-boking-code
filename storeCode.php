@@ -25,7 +25,7 @@ $checkData = MeetingRoomBooking::where('room_id', $room->room_no)->where('status
                     ->orwhere(function ($query) use ($startTime, $endTime)
                     {$query->where(function ($q) use ($startTime, $endTime)
                     { $q->where('service_start','>',$startTime)->where('service_ends','<',$endTime); })
-                    ->orWhere(function ($q) use ($startTime, $endTime){ $q->where('service_start','<',$endTime)->where('service_ends','>',$endTime); });});
+                    ->orWhere(function ($q) use ($startTime, $endTime){ $q->where('service_start','<=',$endTime)->where('service_ends','>',$endTime); });});
         })->get();
 
 
