@@ -70,6 +70,68 @@ $checkData = MeetingRoomBooking::where('room_id', $room->room_no)->where('status
     }
 }
 
+ public function ajaxUpdate(Request $request, $id){
+        if($request->ajax()){
+            $startTime = $id; //Getting Starting Date
+            $endTime = $request->end_date;
+            $current_id = $request->project_id;
+
+
+
+
+            $busy = array(); //Agents Who are really busy
+
+            // Array Convert to Single Dimension
+
+            function array_flatten($array) {
+                if (!is_array($array)) {
+                    return FALSE;
+                }
+                $result = array();
+                foreach ($array as $key => $value) {
+                    if (is_array($value)) {
+                        $result = array_merge($result, array_flatten($value));
+                    }
+                    else {
+                        $result[$key] = $value;
+                    }
+                }
+                return $result;
+            }
+
+
+            //End
+
+
+            $assigned_agent = AssignAgentToProject::where('id','<>',$current_id)->where(function ($dateQuery) use ($startTime, $endTime){
+
+                $dateQuery->where(function ($query) use ($startTime, $endTime) {
+                    $query->where(function ($q) use ($startTime, $endTime){
+                        $q->where('service_start','>=',$startTime)
+                            ->where('service_ends','<=',$endTime); })
+                        ->orWhere(function ($q) use ($startTime, $endTime)
+                        { $q->where('service_start','<=',$startTime)
+                            ->where('service_ends','>=',$startTime); });})
+                    ->orwhere(function ($query) use ($startTime, $endTime)
+                    {$query->where(function ($q) use ($startTime, $endTime)
+                    { $q->where('service_start','>',$startTime)->where('service_ends','<',$endTime); })
+                        ->orWhere(function ($q) use ($startTime, $endTime){ $q->where('service_start','<=',$endTime)->where('service_ends','>',$endTime); });});
+            })->get();
+
+
+
+
+            foreach ($assigned_agent as $key => $agent){
+                $busy[] = explode(",",$agent->agent_id);
+            }
+
+            //Getting Free Agents
+            $agents = Employee::where('role_id',6)->where('status','active')->whereNotIN('id',array_flatten($busy))->get();
+
+            return view('admin.roaster.assign.ajax.agents',compact('agents'))->render();
+        }
+    }
+
 
 
 
@@ -77,25 +139,87 @@ $checkData = MeetingRoomBooking::where('room_id', $room->room_no)->where('status
 
 <script>
   
-   $('#datepicker').focusout(function () {
-            var start_date =  $(this).val();
-            var end_date = $("#datepicker2").val();
-
-
-            if(start_date != '{{$assign->service_start}}'){
-                $('#selected-agent').hide();
-                $("#mycheck").prop("checked", false);
-            }
-            if(start_date == '{{$assign->service_start}}'){
-                $('#selected-agent').show();
-                $("#mycheck").prop("checked", true);
-            }
-
-            $.ajax({
+  
+   $.ajax({
                 type: "GET",
                 url: "{{ url('eroster/agent-finder/edit') }}/" + start_date,
                 data:{
                     end_date : end_date,
+                },
+
+                success:function (response) {
+                    $("#agentArea").html("");
+                    $("#agentArea").append(response);
+                    console.log(response)
+
+                },
+                error: function (xhr) {
+                    console.log(xhr)
+                }
+            })
+  
+  
+ $('#datepicker').focusout(function () {
+            var start_date =  $(this).val();
+            var end_date = $("#datepicker2").val();
+            var project_id = '{{$assign->id}}';
+
+
+            if(start_date != '{{$assign->service_start}}'){
+                $('#selected-agent').hide();
+                $(".mycheck").prop("checked", false);
+            }
+            if(start_date == '{{$assign->service_start}}'){
+                $('#selected-agent').show();
+                $(".mycheck").prop("checked", true);
+            }
+
+            $.ajax({
+                type: "GET",
+                url: "{{ url('eroster/agent-finder/update') }}/" + start_date,
+                data:{
+                    end_date : end_date,
+                    project_id : project_id,
+                },
+
+                success:function (response) {
+                    $("#agentArea").html("");
+                    $("#agentArea").append(response);
+                    console.log(response)
+
+                },
+                error: function (xhr) {
+                    console.log(xhr)
+                }
+            })
+
+
+
+
+        });
+
+        $('#datepicker2').focusout(function () {
+            var start_date = $("#datepicker").val();
+            var end_date = $(this).val();
+            var project_id = '{{$assign->id}}';
+
+
+
+            if(end_date != '{{$assign->service_ends}}'){
+                $('#selected-agent').hide();
+                $(".mycheck").prop("checked", false);
+            }
+            if(end_date == '{{$assign->service_ends}}'){
+                $('#selected-agent').show();
+                $(".mycheck").prop("checked", true);
+            }
+
+            $.ajax({
+                type: "GET",
+                url: "{{ url('eroster/agent-finder/update') }}/" + start_date,
+                data:{
+                    end_date : end_date,
+                    project_id : project_id,
                 },
 
                 success:function (response) {
